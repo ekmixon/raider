@@ -82,22 +82,18 @@ class Alter(Plugin):
     @classmethod
     def prepend(cls, parent_plugin: Plugin, string: str) -> "Alter":
         """Prepend a string to plugin's value."""
-        alter = cls(
+        return cls(
             parent_plugin=parent_plugin,
             alter_function=lambda value: string + value,
         )
 
-        return alter
-
     @classmethod
     def append(cls, parent_plugin: Plugin, string: str) -> "Alter":
         """Append a string after the plugin's value"""
-        alter = cls(
+        return cls(
             parent_plugin=parent_plugin,
             alter_function=lambda value: value + string,
         )
-
-        return alter
 
     @classmethod
     def replace(
@@ -109,13 +105,11 @@ class Alter(Plugin):
         """Replace a substring from plugin's value with something else."""
 
         def replace_old_value(
-            value: str, old: str, new: Union[str, Plugin]
-        ) -> Optional[str]:
+                value: str, old: str, new: Union[str, Plugin]
+            ) -> Optional[str]:
             """Replaces an old substring with the new one."""
             if isinstance(new, Plugin):
-                if not new.value:
-                    return None
-                return value.replace(old, new.value)
+                return value.replace(old, new.value) if new.value else None
             return value.replace(old, new)
 
         alter = cls(
@@ -143,10 +137,7 @@ class Combine(Plugin):
             flags=Plugin.DEPENDS_ON_OTHER_PLUGINS,
             function=self.concatenate_values,
         )
-        self.plugins = []
-        for item in args:
-            if isinstance(item, Plugin):
-                self.plugins.append(item)
+        self.plugins = [item for item in args if isinstance(item, Plugin)]
 
     def concatenate_values(self) -> str:
         """Concatenate the provided values.

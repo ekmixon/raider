@@ -6,7 +6,7 @@ raider.authenticate()
 
 
 def fuzz_inputs(value):
-    return [value + str(i) for i in range(0, 10)]
+    return [value + str(i) for i in range(10)]
 
 
 raider.fuzz_function("my_function", "access_token", fuzz_inputs)

@@ -185,10 +185,8 @@ class User:
 
     def to_dict(self) -> Dict[str, str]:
         """Returns this object's data in a dictionary format."""
-        data = {}
-        data["username"] = self.username
-        data["password"] = self.password
-        data.update(self.cookies.to_dict())
+        data = {"username": self.username, "password": self.password}
+        data |= self.cookies.to_dict()
         data.update(self.headers.to_dict())
         data.update(self.data.to_dict())
         return data
@@ -227,11 +225,7 @@ class UserStore(DataStore):
             An optional string specifying the active user to be set.
 
         """
-        if active_user:
-            self.active_user = active_user
-        else:
-            self.active_user = hy_dict_to_python(users[0])["username"]
-
+        self.active_user = active_user or hy_dict_to_python(users[0])["username"]
         values = {}
         for item in users:
             userdata = hy_dict_to_python(item)
@@ -243,11 +237,7 @@ class UserStore(DataStore):
 
     def to_dict(self) -> Dict[str, str]:
         """Returns the UserStore data in dictionary format."""
-        data = {}
-        for username in self:
-            data[username] = self[username].to_dict()
-
-        return data
+        return {username: self[username].to_dict() for username in self}
 
     @property
     def active(self) -> User:

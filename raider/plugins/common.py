@@ -137,8 +137,7 @@ class Plugin:
             An requests.models.Response object with the HTTP response.
 
         """
-        output = self.function(response)
-        if output:
+        if output := self.function(response):
             self.value = output
             logging.debug(
                 "Found ouput %s = %s",

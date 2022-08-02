@@ -6,7 +6,7 @@ raider.load_session()
 
 
 def fuzz_inputs(value):
-    for i in range(0, 10):
+    for i in range(10):
         yield value + str(i)
 
 

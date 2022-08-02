@@ -142,8 +142,7 @@ class Fuzz:
         Returns:
           The plugin object to be fuzzed.
         """
-        flow_inputs = flow.request.list_inputs()
-        if flow_inputs:
+        if flow_inputs := flow.request.list_inputs():
             fuzzing_plugin = flow_inputs.get(self.fuzzing_point)
             if not fuzzing_plugin:
                 logging.critical(
@@ -236,8 +235,7 @@ class Fuzz:
             fuzzing_plugin.value = self.processor(item)
             fuzzing_plugin.function = fuzzing_plugin.return_value
             flow.execute(user, config)
-            next_stage = flow.run_operations()
-            if next_stage:
+            if next_stage := flow.run_operations():
                 while next_stage != flow.name:
                     if next_stage:
                         next_stage = authentication.run_stage(

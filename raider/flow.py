@@ -143,8 +143,7 @@ class Flow:
             A :class:`User <raider.user.User>` object with the userdata.
 
         """
-        flow_inputs = self.request.list_inputs()
-        if flow_inputs:
+        if flow_inputs := self.request.list_inputs():
             for plugin in flow_inputs.values():
                 plugin.get_value(user.to_dict())
 

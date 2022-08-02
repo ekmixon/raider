@@ -156,10 +156,7 @@ class Request:
         self.cookies = CookieStore(cookies)
 
         self.data: Union[PostBody, DataStore]
-        if isinstance(data, PostBody):
-            self.data = data
-        else:
-            self.data = DataStore(data)
+        self.data = data if isinstance(data, PostBody) else DataStore(data)
 
     def list_inputs(self) -> Optional[Dict[str, Plugin]]:
         """Returns a list of request's inputs."""
@@ -174,34 +171,34 @@ class Request:
             output = {}
             if plugin.depends_on_other_plugins:
                 for item in plugin.plugins:
-                    output.update({item.name: item})
+                    output[item.name] = item
             return output
 
         inputs = {}
 
         if isinstance(self.url, Plugin):
-            inputs.update({self.url.name: self.url})
+            inputs[self.url.name] = self.url
             inputs.update(get_children_plugins(self.url))
         if isinstance(self.path, Plugin):
-            inputs.update({self.path.name: self.path})
+            inputs[self.path.name] = self.path
             inputs.update(get_children_plugins(self.path))
 
         for name in self.cookies:
             cookie = self.cookies[name]
-            inputs.update({name: cookie})
+            inputs[name] = cookie
             inputs.update(get_children_plugins(cookie))
 
         for name in self.headers:
             header = self.headers[name]
-            inputs.update({name: header})
+            inputs[name] = header
             inputs.update(get_children_plugins(header))
 
         for key, value in self.data.items():
             if isinstance(key, Plugin):
-                inputs.update({key.name: key})
+                inputs[key.name] = key
                 inputs.update(get_children_plugins(key))
             if isinstance(value, Plugin):
-                inputs.update({value.name: value})
+                inputs[value.name] = value
                 inputs.update(get_children_plugins(value))
 
         return inputs
@@ -252,29 +249,25 @@ class Request:
             name = self.cookies[key].name
             if self.cookies[key].name_not_known_in_advance:
                 cookies.pop(key)
-            value = self.cookies[key].get_value(userdata)
-            if value:
+            if value := self.cookies[key].get_value(userdata):
                 cookies.update({name: value})
 
         for key in self.headers:
             name = self.headers[key].name
             if self.headers[key].name_not_known_in_advance:
                 headers.pop(key)
-            value = self.headers[key].get_value(userdata)
-            if value:
+            if value := self.headers[key].get_value(userdata):
                 headers.update({name: value})
 
         for key in list(httpdata):
             value = httpdata[key]
             if isinstance(value, Plugin):
-                new_value = value.get_value(userdata)
-                if new_value:
+                if new_value := value.get_value(userdata):
                     httpdata.update({key: new_value})
 
             if isinstance(key, Plugin):
                 new_value = httpdata.pop(key)
-                new_key = key.get_value(userdata)
-                if new_key:
+                if new_key := key.get_value(userdata):
                     httpdata.update({new_key: new_value})
 
         return {"cookies": cookies, "data": httpdata, "headers": headers}

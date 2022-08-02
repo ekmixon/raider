@@ -66,10 +66,10 @@ class Functions:
           function has been found.
 
         """
-        for function in self.functions:
-            if function.name == name:
-                return function
-        return None
+        return next(
+            (function for function in self.functions if function.name == name),
+            None,
+        )
 
     def run(self, name: str, user: User, config: Config) -> None:
         """Runs a Function.
@@ -88,8 +88,7 @@ class Functions:
 
         """
         logging.info("Running function %s", name)
-        function = self.get_function_by_name(name)
-        if function:
+        if function := self.get_function_by_name(name):
             function.execute(user, config)
             if function.outputs:
                 for item in function.outputs:

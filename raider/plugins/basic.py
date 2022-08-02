@@ -99,8 +99,7 @@ class Regex(Plugin):
           if there are no matches.
 
         """
-        matches = re.search(self.regex, response.text)
-        if matches:
+        if matches := re.search(self.regex, response.text):
             groups = matches.groups()
             self.value = groups[self.extract]
             logging.debug("Regex %s: %s", self.name, str(self.value))
@@ -113,7 +112,7 @@ class Regex(Plugin):
 
     def __str__(self) -> str:
         """Returns a string representation of the Plugin."""
-        return "Regex:" + self.regex + ":" + str(self.extract)
+        return f"Regex:{self.regex}:{str(self.extract)}"
 
 
 class Html(Plugin):
@@ -316,26 +315,24 @@ class Json(Plugin):
                     )
                     is_valid = False
                     break
+            elif item in temp:
+                temp = temp[item]
             else:
-                if item in temp:
-                    temp = temp[item]
-                else:
-                    logging.warning(
-                        (
-                            "Key '%s' not found in the response body.",
-                            "Cannot extract plugin's value.",
-                        ),
-                        item,
-                    )
-                    is_valid = False
-                    break
+                logging.warning(
+                    (
+                        "Key '%s' not found in the response body.",
+                        "Cannot extract plugin's value.",
+                    ),
+                    item,
+                )
+                is_valid = False
+                break
 
-        if is_valid:
-            self.value = str(temp)
-            logging.debug("Json filter %s: %s", self.name, str(self.value))
-        else:
+        if not is_valid:
             return None
 
+        self.value = str(temp)
+        logging.debug("Json filter %s: %s", self.name, self.value)
         return self.value
 
     @classmethod
@@ -354,7 +351,7 @@ class Json(Plugin):
 
     def __str__(self) -> str:
         """Returns a string representation of the Plugin."""
-        return "Json:" + str(self.extract)
+        return f"Json:{str(self.extract)}"
 
 
 class Variable(Plugin):
@@ -457,7 +454,7 @@ class Prompt(Plugin):
         self.value = None
         while not self.value:
             print("Please provide the input value")
-            self.value = input(self.name + " = ")
+            self.value = input(f"{self.name} = ")
         return self.value
 
 
@@ -491,24 +488,23 @@ class Cookie(Plugin):
             Cookie on runtime.
 
         """
-        if not function:
-            if flags & Plugin.NEEDS_RESPONSE:
-                super().__init__(
-                    name=name,
-                    function=self.extract_from_response,
-                    value=value,
-                    flags=flags,
-                )
-            else:
-                super().__init__(
-                    name=name,
-                    value=value,
-                    flags=flags,
-                )
-
-        else:
+        if function:
             super().__init__(
                 name=name, function=function, value=value, flags=flags
+            )
+
+        elif flags & Plugin.NEEDS_RESPONSE:
+            super().__init__(
+                name=name,
+                function=self.extract_from_response,
+                value=value,
+                flags=flags,
+            )
+        else:
+            super().__init__(
+                name=name,
+                value=value,
+                flags=flags,
             )
 
     def extract_from_response(
@@ -572,12 +568,11 @@ class Cookie(Plugin):
           A Cookie object with the name and the plugin's value.
 
         """
-        cookie = cls(
+        return cls(
             name=name,
             value=parent_plugin.value,
             flags=Plugin.DEPENDS_ON_OTHER_PLUGINS,
         )
-        return cookie
 
 
 class Header(Plugin):
@@ -611,25 +606,24 @@ class Header(Plugin):
 
         """
 
-        if not function:
-            if flags & Plugin.NEEDS_RESPONSE:
-                super().__init__(
-                    name=name,
-                    function=self.extract_from_response,
-                    value=value,
-                    flags=flags,
-                )
+        if function:
+            super().__init__(
+                name=name, function=function, value=value, flags=flags
+            )
 
-            else:
-                super().__init__(
-                    name=name,
-                    value=value,
-                    flags=flags,
-                )
+        elif flags & Plugin.NEEDS_RESPONSE:
+            super().__init__(
+                name=name,
+                function=self.extract_from_response,
+                value=value,
+                flags=flags,
+            )
 
         else:
             super().__init__(
-                name=name, function=function, value=value, flags=flags
+                name=name,
+                value=value,
+                flags=flags,
             )
 
     def extract_from_response(
@@ -694,8 +688,7 @@ class Header(Plugin):
 
         """
         encoded = b64encode(":".join([username, password]).encode("utf-8"))
-        header = cls("Authorization", "Basic " + encoded.decode("utf-8"))
-        return header
+        return cls("Authorization", "Basic " + encoded.decode("utf-8"))
 
     @classmethod
     def bearerauth(cls, access_token: Plugin) -> "Header":
@@ -713,15 +706,14 @@ class Header(Plugin):
           A Header object with the proper bearer authentication string.
 
         """
-        header = cls(
+        return cls(
             name="Authorization",
             value=None,
             flags=0,
-            function=lambda: "Bearer " + access_token.value
+            function=lambda: f"Bearer {access_token.value}"
             if access_token.value
             else None,
         )
-        return header
 
     @classmethod
     def from_plugin(cls, parent_plugin: Plugin, name: str) -> "Header":

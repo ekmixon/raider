@@ -65,10 +65,7 @@ class Authentication:
           None if there are no such object.
 
         """
-        for stage in self.stages:
-            if stage.name == name:
-                return stage
-        return None
+        return next((stage for stage in self.stages if stage.name == name), None)
 
     def get_stage_name_by_id(self, stage_id: int) -> str:
         """Returns the stage name given its number.
@@ -102,13 +99,18 @@ class Authentication:
         Returns:
           An integer with the index of the Flow with the specified "name".
         """
-        if not name:
-            return -1
-        for stage in self.stages:
-            if stage.name == name:
-                return self.stages.index(stage)
-
-        return -1
+        return (
+            next(
+                (
+                    self.stages.index(stage)
+                    for stage in self.stages
+                    if stage.name == name
+                ),
+                -1,
+            )
+            if name
+            else -1
+        )
 
     def run_all(self, user: User, config: Config) -> None:
         """Runs all authentication stages.
@@ -198,10 +200,7 @@ class Authentication:
                     user.set_data(item)
 
         next_stage = stage.run_operations()
-        if next_stage:
-            self._current_stage = self.get_stage_index(next_stage)
-        else:
-            self._current_stage = -1
+        self._current_stage = self.get_stage_index(next_stage) if next_stage else -1
         return next_stage
 
     @property

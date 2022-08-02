@@ -54,8 +54,7 @@ def execute_actions(
 
     if isinstance(operations, list):
         for item in operations:
-            output = item.run(response)
-            if output:
+            if output := item.run(response):
                 return output
 
     return None
@@ -145,9 +144,7 @@ class Operation:
         logging.debug("Running operation %s", str(self))
         if self.is_conditional:
             return self.run_conditional(response)
-        if self.needs_response:
-            return self.function(response)
-        return self.function()
+        return self.function(response) if self.needs_response else self.function()
 
     def run_conditional(
         self, response: requests.models.Response
@@ -167,17 +164,10 @@ class Operation:
           An optional string with the name of the next stage.
 
         """
-        if self.needs_response:
-            check = self.function(response)
-        else:
-            check = self.function()
-
+        check = self.function(response) if self.needs_response else self.function()
         if check and self.action:
             return execute_actions(self.action, response)
-        if self.otherwise:
-            return execute_actions(self.otherwise, response)
-
-        return None
+        return execute_actions(self.otherwise, response) if self.otherwise else None
 
     @property
     def needs_response(self) -> bool:
@@ -352,19 +342,19 @@ class Save(Operation):
 
         """
         self.filename = filename
-        if not save_function:
-            if plugin:
-                super().__init__(
-                    function=partial(
-                        self.save_to_file,
-                        content=plugin,
-                    ),
-                    flags=flags,
-                )
-            else:
-                super().__init__(function=self.save_to_file, flags=flags)
-        else:
+        if save_function:
             super().__init__(function=save_function, flags=flags)
+
+        elif plugin:
+            super().__init__(
+                function=partial(
+                    self.save_to_file,
+                    content=plugin,
+                ),
+                flags=flags,
+            )
+        else:
+            super().__init__(function=self.save_to_file, flags=flags)
 
     def save_to_file(
         self, content: Union[str, Plugin, requests.models.Response]
@@ -380,11 +370,7 @@ class Save(Operation):
             A string or a Plugin with the data to be written.
 
         """
-        if self.will_append:
-            mode = "a"
-        else:
-            mode = "w"
-
+        mode = "a" if self.will_append else "w"
         with open(self.filename, mode) as outfile:
             if isinstance(content, requests.models.Response):
                 outfile.write(content.text)
@@ -407,10 +393,7 @@ class Save(Operation):
         Returns:
           A Save object which will append data instead of overwrite.
         """
-        operation = cls(
-            filename=filename, plugin=plugin, flags=Operation.WILL_APPEND
-        )
-        return operation
+        return cls(filename=filename, plugin=plugin, flags=Operation.WILL_APPEND)
 
     @classmethod
     def body(cls, filename: str, append: bool = False) -> "Save":
@@ -437,12 +420,10 @@ class Save(Operation):
         else:
             flags = Operation.NEEDS_RESPONSE
 
-        operation = cls(
+        return cls(
             filename=filename,
             flags=flags,
         )
-
-        return operation
 
 
 class Print(Operation):
@@ -488,22 +469,21 @@ class Print(Operation):
             if isinstance(item, str):
                 print(item)
             else:
-                print(item.name + " = " + str(item.value))
+                print(f"{item.name} = {str(item.value)}")
 
     def __str__(self) -> str:
         """Returns a string representation of the Print Operation."""
-        return "(Print:" + str(self.args) + ")"
+        return f"(Print:{str(self.args)})"
 
     @classmethod
     def body(cls) -> "Print":
         """Classmethod to print the HTTP response body."""
-        operation = cls(
+        return cls(
             function=lambda response: print(
                 "\nHTTP response body:\n" + response.text
             ),
             flags=Operation.NEEDS_RESPONSE,
         )
-        return operation
 
     @classmethod
     def headers(cls, headers: List[str] = None) -> "Print":
@@ -614,7 +594,7 @@ class Error(Operation):
 
     def __str__(self) -> str:
         """Returns a string representation of the Operation."""
-        return "(Error:" + str(self.message) + ")"
+        return f"(Error:{str(self.message)})"
 
 
 class NextStage(Operation):
@@ -645,4 +625,4 @@ class NextStage(Operation):
 
     def __str__(self) -> str:
         """Returns a string representation of the Operation."""
-        return "(NextStage:" + self.next_stage + ")"
+        return f"(NextStage:{self.next_stage})"

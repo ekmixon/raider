@@ -70,11 +70,7 @@ class Config:
 
         """
         filename = get_config_file("common.hy")
-        if os.path.isfile(filename):
-            output = eval_file(filename)
-        else:
-            output = {}
-
+        output = eval_file(filename) if os.path.isfile(filename) else {}
         self.proxy = output.get("proxy", None)
         self.verify = output.get("verify", False)
         self.loglevel = output.get("loglevel", "WARNING")
@@ -120,19 +116,13 @@ class Config:
           all of the locally defined objects in the ".hy" configuration
           files.
         """
-        if not project:
-            active_project = self.active_project
-        else:
-            active_project = project
-
+        active_project = project or self.active_project
         hyfiles = sorted(os.listdir(get_project_dir(active_project)))
         shared_locals: Dict[str, Any]
         shared_locals = {}
         for confile in hyfiles:
             if confile.endswith(".hy") and not confile.startswith("."):
-                shared_locals.update(
-                    eval_project_file(active_project, confile, shared_locals)
-                )
+                shared_locals |= eval_project_file(active_project, confile, shared_locals)
         self.project_config = shared_locals
         return shared_locals
 
@@ -156,8 +146,8 @@ class Config:
 
     def print_config(self) -> None:
         """Prints current configuration."""
-        print("proxy: " + self.proxy)
-        print("verify: " + str(self.verify))
-        print("loglevel: " + self.loglevel)
-        print("user_agent: " + self.user_agent)
-        print("active_project: " + self.active_project)
+        print(f"proxy: {self.proxy}")
+        print(f"verify: {str(self.verify)}")
+        print(f"loglevel: {self.loglevel}")
+        print(f"user_agent: {self.user_agent}")
+        print(f"active_project: {self.active_project}")

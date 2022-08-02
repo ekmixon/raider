@@ -188,9 +188,7 @@ class Raider:
             )
             sys.exit()
 
-        inputs = flow.request.list_inputs()
-
-        if inputs:
+        if inputs := flow.request.list_inputs():
             for plugin in inputs.values():
                 # Reset plugin flags, and get the values from userdata
                 plugin.flags = Plugin.NEEDS_USERDATA

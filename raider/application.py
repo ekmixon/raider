@@ -89,8 +89,7 @@ class Application:
             self.active_user = self.users.active
 
         self.authentication = Authentication(output["_authentication"])
-        functions = output.get("_functions")
-        if functions:
+        if functions := output.get("_functions"):
             self.functions = Functions(functions)
         self.base_url = output.get("_base_url")
 
@@ -127,9 +126,9 @@ class Application:
         with open(filename, "w") as sess_file:
             for username in self.users:
                 user = self.users[username]
-                cookies.update({username: user.cookies.to_dict()})
-                headers.update({username: user.headers.to_dict()})
-                data.update({username: user.data.to_dict()})
+                cookies[username] = user.cookies.to_dict()
+                headers[username] = user.headers.to_dict()
+                data[username] = user.data.to_dict()
 
             value += create_hy_expression("_cookies", cookies)
             value += create_hy_expression("_headers", headers)

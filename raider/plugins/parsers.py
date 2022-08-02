@@ -60,6 +60,4 @@ class UrlParser(Parser):
         elif self.element.startswith("fragment"):
             value = str(parsed_url.fragment)
 
-        if value:
-            return str(value)
-        return None
+        return str(value) if value else None

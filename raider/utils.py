@@ -38,7 +38,7 @@ def default_user_agent() -> str:
       A string with the user agent.
 
     """
-    return "digeex_raider/" + __version__
+    return f"digeex_raider/{__version__}"
 
 
 def get_config_dir() -> str:
@@ -73,8 +73,7 @@ def get_config_file(filename: str) -> str:
 
     """
     confdir = get_config_dir()
-    file_path = os.path.join(confdir, filename)
-    return file_path
+    return os.path.join(confdir, filename)
 
 
 def get_project_dir(project: str) -> str:
@@ -93,8 +92,7 @@ def get_project_dir(project: str) -> str:
 
     """
     confdir = get_config_dir()
-    project_conf = os.path.join(confdir, "projects", project)
-    return project_conf
+    return os.path.join(confdir, "projects", project)
 
 
 def get_project_file(project: str, filename: str) -> str:
@@ -114,8 +112,7 @@ def get_project_file(project: str, filename: str) -> str:
 
     """
     project_conf = get_project_dir(project)
-    file_path = os.path.join(project_conf, filename)
-    return file_path
+    return os.path.join(project_conf, filename)
 
 
 def import_raider_objects() -> Dict[str, Any]:
@@ -152,9 +149,7 @@ def import_raider_objects() -> Dict[str, Any]:
     }
 
     for module, classes in hy_imports.items():
-        expr = hy.read_str(
-            "(import [raider." + module + " [" + classes + "]])"
-        )
+        expr = hy.read_str(f"(import [raider.{module} [{classes}]])")
         logging.debug("expr = %s", str(expr).replace("\n", " "))
         hy.eval(expr)
 
@@ -181,7 +176,7 @@ def hy_dict_to_python(hy_dict: Dict[hy.HyKeyword, Any]) -> Dict[str, Any]:
     data = {}
     for hy_key in hy_dict:
         key = hy_key.name
-        data.update({key: hy_dict[hy_key]})
+        data[key] = hy_dict[hy_key]
 
     return data
 
@@ -234,8 +229,7 @@ def create_hy_expression(
     Returns:
       A string with the valid hy expression.
     """
-    data = []
-    data.append(hy.HySymbol("setv"))
+    data = [hy.HySymbol("setv")]
     data.append(hy.HySymbol(variable))
 
     if isinstance(value, dict):
@@ -275,23 +269,21 @@ def serialize_hy(
 
     """
     if isinstance(form, hy.models.HyExpression):
-        hystring = "(" + " ".join([serialize_hy(x) for x in form]) + ")"
+        return "(" + " ".join([serialize_hy(x) for x in form]) + ")"
     elif isinstance(form, hy.models.HyDict):
-        hystring = "{" + " ".join([serialize_hy(x) for x in form]) + "}"
+        return "{" + " ".join([serialize_hy(x) for x in form]) + "}"
     elif isinstance(form, hy.models.HyList):
-        hystring = "[" + " ".join([serialize_hy(x) for x in form]) + "]"
+        return "[" + " ".join([serialize_hy(x) for x in form]) + "]"
     elif isinstance(form, hy.models.HySymbol):
-        hystring = "{}".format(form)
+        return f"{form}"
     elif isinstance(form, hy.models.HyInteger):
-        hystring = "{}".format(int(form))
+        return f"{int(form)}"
     elif isinstance(form, hy.models.HyKeyword):
-        hystring = "{}".format(form.name)
+        return f"{form.name}"
     elif isinstance(form, hy.models.HyString):
-        hystring = '"{}"'.format(form)
+        return f'"{form}"'
     else:
-        hystring = "{}".format(form)
-
-    return hystring
+        return f"{form}"
 
 
 def eval_file(
@@ -322,8 +314,7 @@ def eval_file(
     with open(filename) as hyfile:
         try:
             while True:
-                expr = hy.read(hyfile)
-                if expr:
+                if expr := hy.read(hyfile):
                     logging.debug("expr = %s", str(expr).replace("\n", " "))
                     hy.eval(expr)
         except EOFError:
@@ -374,13 +365,9 @@ def list_projects() -> List[str]:
       configuration directory.
 
     """
-    projects = []
     projectdir = os.path.join(get_config_dir(), "projects")
     os.makedirs(projectdir, exist_ok=True)
-    for filename in os.listdir(projectdir):
-        if not filename[0] == "_":
-            projects.append(filename)
-    return projects
+    return [filename for filename in os.listdir(projectdir) if filename[0] != "_"]
 
 
 def match_tag(html_tag: bs4.element.Tag, attributes: Dict[str, str]) -> bool:
@@ -401,12 +388,10 @@ def match_tag(html_tag: bs4.element.Tag, attributes: Dict[str, str]) -> bool:
       A boolean saying whether the tag matched with the attributes or not.
 
     """
-    for key, value in attributes.items():
-        if not (key in html_tag.attrs) or not (
-            re.match(value, html_tag.attrs[key])
-        ):
-            return False
-    return True
+    return not any(
+        key not in html_tag.attrs or not (re.match(value, html_tag.attrs[key]))
+        for key, value in attributes.items()
+    )
 
 
 def parse_json_filter(raw: str) -> List[str]:
@@ -449,7 +434,7 @@ def parse_json_filter(raw: str) -> List[str]:
 
                 index = array_indices[open_delim_index + 1 : close_delim_index]
                 if index.isdecimal():
-                    parsed_item.append("[" + index + "]")
+                    parsed_item.append(f"[{index}]")
                     array_indices = array_indices[close_delim_index + 1 :]
                 else:
                     logging.critical(

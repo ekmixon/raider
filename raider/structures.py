@@ -40,16 +40,11 @@ class DataStore:
 
         """
         self._index = -1
-        if data:
-            self._store = data
-        else:
-            self._store = {}
+        self._store = data or {}
 
     def __getitem__(self, key: Any) -> Any:
         """Getter to return an element with the key."""
-        if key in self._store:
-            return self._store[key]
-        return None
+        return self._store[key] if key in self._store else None
 
     def __setitem__(self, key: Any, value: Any) -> None:
         """Setter to add a new element to DataStore."""
@@ -57,8 +52,7 @@ class DataStore:
 
     def __iter__(self) -> Iterator[Any]:
         """Iterator to yield the keys."""
-        for key in list(self._store):
-            yield key
+        yield from list(self._store)
 
     def __next__(self) -> Any:
         """Iterator to get the next element."""
@@ -84,10 +78,7 @@ class DataStore:
 
     def list_values(self) -> List[Any]:
         """Returns a list of the values in the DataStore."""
-        data = []
-        for key in self._store:
-            data.append(self._store[key])
-        return data
+        return [self._store[key] for key in self._store]
 
     def to_dict(self) -> Dict[Any, Any]:
         """Returns the DataStore elements as a dictionary."""
@@ -95,11 +86,7 @@ class DataStore:
 
     def items(self) -> List[Tuple[Any, Any]]:
         """Returns a list of tuples containing the keys and values."""
-        data = []
-        for key in self._store:
-            data.append((key, self._store[key]))
-
-        return data
+        return [(key, self._store[key]) for key in self._store]
 
 
 class HeaderStore(DataStore):
