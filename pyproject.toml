@@ -52,7 +52,7 @@ funcparserlib = "1.0.0a0"
     pytest-cov = "^2.12.1"
     pre-commit = "^2.13.0"
     flake8 = "^3.9.2"
-    pylint = "^2.9.3"
+    pylint = "^2.16.1"
     black = {version = "^21.6b0", allow-prereleases = true}
     isort = "^5.9.1"
     sphinxcontrib-needs = "^0.7.0"
